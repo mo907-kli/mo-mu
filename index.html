@@ -64,7 +64,7 @@
         .answer-input { padding: 15px; font-size: 1.5rem; border-radius: 10px; border: 2px solid #444; background: #111; color: white; text-align: center; font-family: 'Cairo'; width: 80%; display: none; margin: 0 auto 20px auto; }
         .answer-input:focus { outline: none; border-color: var(--primary); }
         
-        /* أزرار التدخل (Buzzers) */
+        /* أزرار الإجابة (Buzzers) */
         .buzzers { display: none; justify-content: space-between; gap: 15px; margin-top: 30px; }
         .buzzers button { flex: 1; padding: 20px; font-size: 1.5rem; border: none; border-radius: 15px; cursor: pointer; color: white; font-family: 'Cairo'; font-weight: bold; transition: 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
         .btn-buzz-t1 { background: var(--t1-color); }
@@ -119,8 +119,8 @@
             <div id="statusMsg" style="font-weight: bold; font-size:1.4rem; margin-bottom: 10px;"></div>
             
             <div class="buzzers" id="buzzers">
-                <button class="btn-buzz-t1" id="btnBuzz1" onclick="activateBuzzer('t1')">تدخل: الفريق الأول</button>
-                <button class="btn-buzz-t2" id="btnBuzz2" onclick="activateBuzzer('t2')">تدخل: الفريق الثاني</button>
+                <button class="btn-buzz-t1" id="btnBuzz1" onclick="activateBuzzer('t1')">إجابة: الفريق الأول</button>
+                <button class="btn-buzz-t2" id="btnBuzz2" onclick="activateBuzzer('t2')">إجابة: الفريق الثاني</button>
             </div>
             
             <div class="action-bar" id="actionBar">
@@ -169,7 +169,6 @@
         let currentAnswer = '';
         let currentCell = null;
         
-        // متغيرات النظام التلقائي والتصويت
         let activeAnsweringTeam = null;
         let t1CanAnswer = true;
         let t2CanAnswer = true;
@@ -202,8 +201,8 @@
             let n2 = document.getElementById('t2Name').value || 'الفريق الثاني';
             document.getElementById('nameDisplay1').textContent = n1;
             document.getElementById('nameDisplay2').textContent = n2;
-            document.getElementById('btnBuzz1').textContent = `تدخل: ${n1}`;
-            document.getElementById('btnBuzz2').textContent = `تدخل: ${n2}`;
+            document.getElementById('btnBuzz1').textContent = `إجابة: ${n1}`;
+            document.getElementById('btnBuzz2').textContent = `إجابة: ${n2}`;
 
             document.getElementById('lobbyScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'flex';
@@ -233,11 +232,10 @@
 
         function startQuestion(letter) {
             let qList = questionsDB[letter];
-            let qObj = (qList && qList.length > 0) ? qList[Math.floor(Math.random() * qList.length)] : {q: "لا يوجد سؤال مسجل! (اكتب أي شيء لتجاوز الخلل)", a: "مفتوح"};
+            let qObj = (qList && qList.length > 0) ? qList[Math.floor(Math.random() * qList.length)] : {q: "تأكد من رفع ملف questions.json بجانب index.html في Vercel (اكتب أي شيء لتجاوز الخلل)", a: "مفتوح"};
             
             currentAnswer = qObj.a;
             
-            // إعادة ضبط متغيرات السؤال
             t1CanAnswer = true;
             t2CanAnswer = true;
             activeAnsweringTeam = null;
@@ -247,7 +245,6 @@
             document.getElementById('modalLetter').textContent = letter;
             document.getElementById('qText').textContent = qObj.q;
             
-            // إخفاء العناصر أثناء العد
             document.getElementById('qText').style.display = 'none';
             document.getElementById('buzzers').style.display = 'none';
             document.getElementById('btnBuzz1').style.display = 'block';
@@ -278,15 +275,13 @@
             }, 1000);
         }
 
-        // عند ضغط زر التدخل من أحد الفرق
         function activateBuzzer(team) {
             activeAnsweringTeam = team;
-            document.getElementById('buzzers').style.display = 'none'; // إخفاء الأزرار
+            document.getElementById('buzzers').style.display = 'none';
             let input = document.getElementById('answerInput');
             input.style.display = 'block';
             input.disabled = false;
             
-            // تحديد لون المربع باسم الفريق
             let teamName = team === 't1' ? document.getElementById('nameDisplay1').textContent : document.getElementById('nameDisplay2').textContent;
             let teamColor = team === 't1' ? 'var(--t1-color)' : 'var(--t2-color)';
             
@@ -297,7 +292,6 @@
             input.focus();
         }
 
-        // التحقق التلقائي أثناء الكتابة (إذا كتبها صح بالملي)
         document.getElementById('answerInput').addEventListener('input', function(e) {
             let val = e.target.value.trim();
             if (val === currentAnswer && currentAnswer !== "مفتوح") {
@@ -305,7 +299,6 @@
             }
         });
 
-        // التحقق عند ضغط Enter (للإجابات الخاطئة أو الاستسلام)
         document.getElementById('answerInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 let val = this.value.trim();
@@ -326,7 +319,7 @@
             
             setTimeout(() => {
                 awardPoint(activeAnsweringTeam);
-            }, 1500); // تأخير بسيط ليقرأو الرسالة
+            }, 1500); 
         }
 
         function handleWrongAnswer() {
@@ -337,7 +330,6 @@
             input.style.display = 'none';
             input.value = '';
             
-            // سحب الصلاحية من الفريق الذي أخطأ
             if(activeAnsweringTeam === 't1') {
                 t1CanAnswer = false;
                 document.getElementById('btnBuzz1').style.display = 'none';
@@ -348,27 +340,23 @@
             
             activeAnsweringTeam = null;
             
-            // إذا كان الفريق الثاني يقدر يجاوب، نرجع نظهر أزرار التدخل
             if (t1CanAnswer || t2CanAnswer) {
                 setTimeout(() => {
                     document.getElementById('buzzers').style.display = 'flex';
-                    document.getElementById('statusMsg').textContent = 'فرصة للفريق الآخر! من يضغط أولاً؟';
+                    document.getElementById('statusMsg').textContent = 'فرصة للفريق الآخر! من يضغط زر الإجابة أولاً؟';
                     document.getElementById('statusMsg').style.color = '#fff';
                 }, 1000);
             } else {
-                // الفريقين أخطأوا
                 document.getElementById('statusMsg').textContent = `انتهت الفرص! الإجابة كانت: ${currentAnswer}`;
                 setTimeout(() => closeModal(), 3000);
             }
         }
 
-        // نظام التصويت لتغيير السؤال
         function voteSkip() {
             skipVotes++;
             updateSkipBtnUI();
             
             if (skipVotes >= 2) {
-                // تمت الموافقة، اسحب سؤال جديد لنفس الحرف
                 document.getElementById('statusMsg').style.color = '#ff9800';
                 document.getElementById('statusMsg').textContent = 'تمت الموافقة! جاري تغيير السؤال...';
                 setTimeout(() => {
