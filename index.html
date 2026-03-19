@@ -297,4 +297,33 @@
         }
     </script>
 </body>
+    <script>
+    // حماية الصفحة من الفحص (F12) وكليك يمين
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault(); // منع كليك يمين
+    });
+
+    document.addEventListener('keydown', function(e) {
+        // منع F12
+        if (e.key === 'F12' || e.keyCode === 123) {
+            e.preventDefault();
+        }
+        // منع Ctrl+Shift+I (فتح أدوات المطور)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+            e.preventDefault();
+        }
+        // منع Ctrl+Shift+J (فتح الكونسول)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+            e.preventDefault();
+        }
+        // منع Ctrl+U (عرض مصدر الصفحة)
+        if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+            e.preventDefault();
+        }
+        // منع Ctrl+Shift+C (فحص العناصر)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) {
+            e.preventDefault();
+        }
+    });
+</script>
 </html>
