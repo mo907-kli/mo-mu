@@ -1,0 +1,103 @@
+:root {
+    --bg-main: #10121a;
+    --box-bg: #1c202d;
+    --primary: #f58220;
+    --t1-color: #d96c3a; /* برتقالي الفريق 1 */
+    --t2-color: #4a9e9a; /* تيفاني الفريق 2 */
+    --border: #2d3345;
+    --text-main: #ffffff;
+    --text-muted: #8b92a5;
+}
+
+body {
+    margin: 0; padding: 0; background-color: var(--bg-main); color: var(--text-main);
+    font-family: 'Cairo', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    /* نقشة سداسية خفيفة في الخلفية للجمالية */
+    background-image: radial-gradient(circle at top, #1a1e2b 0%, var(--bg-main) 70%);
+}
+
+.screen { display: none; width: 100%; flex-direction: column; align-items: center; padding-top: 40px; }
+.screen.active { display: flex; }
+
+.main-logo { color: var(--primary); font-size: 4rem; font-weight: 900; text-shadow: 0 0 25px rgba(245, 130, 32, 0.4); margin-bottom: 30px; }
+.main-logo.small { font-size: 2.5rem; margin-bottom: 20px; }
+
+/* الصناديق الزجاجية الفخمة */
+.glass-box {
+    background: var(--box-bg); border: 1px solid var(--border); border-radius: 20px;
+    width: 90%; max-width: 450px; padding: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column; gap: 20px; text-align: center;
+}
+
+.box-header { font-size: 1.2rem; font-weight: bold; color: var(--text-muted); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.input-wrapper { display: flex; flex-direction: column; gap: 8px; text-align: right; }
+.input-wrapper label { color: var(--text-muted); font-size: 0.9rem; font-weight: bold; }
+.input-wrapper input {
+    padding: 15px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-main);
+    color: white; font-family: 'Cairo'; font-size: 1.2rem; font-weight: bold; text-align: center; transition: 0.3s;
+}
+.input-wrapper input:focus { outline: none; border-color: var(--primary); }
+
+.btn { padding: 15px; border-radius: 10px; font-size: 1.2rem; font-weight: 900; font-family: 'Cairo'; cursor: pointer; transition: 0.3s; border: none; }
+.btn-primary { background: linear-gradient(to bottom, #ff9840, var(--primary)); color: #000; box-shadow: 0 8px 20px rgba(245, 130, 32, 0.3); }
+.btn-primary:hover { transform: translateY(-3px); filter: brightness(1.1); }
+.btn-secondary { background: #252a38; border: 1px solid var(--border); color: white; }
+.btn-secondary:hover { background: #2d3345; }
+
+.divider { color: var(--text-muted); font-size: 0.9rem; margin: 10px 0; position: relative; }
+
+/* اللوبي */
+.room-banner {
+    background: linear-gradient(45deg, #1c202d, #252a38); border: 1px solid var(--primary); border-radius: 15px;
+    padding: 15px 40px; display: flex; flex-direction: column; align-items: center; margin-bottom: 40px;
+    box-shadow: 0 0 20px rgba(245, 130, 32, 0.1);
+}
+.banner-text { color: var(--text-muted); font-size: 0.9rem; font-weight: bold; }
+.banner-code { color: var(--primary); font-size: 2.5rem; font-weight: 900; letter-spacing: 6px; }
+
+.teams-container { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; width: 90%; max-width: 1000px; margin-bottom: 30px;}
+.team-panel { background: var(--box-bg); border-radius: 15px; width: 280px; min-height: 250px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.3);}
+.panel-head { padding: 15px; text-align: center; font-weight: 900; color: #fff; font-size: 1.2rem; }
+.panel-head.t1 { background: var(--t1-color); }
+.panel-head.t2 { background: var(--t2-color); }
+.panel-head.wait { background: #453b60; }
+.panel-content { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+.player-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; border: 1px solid var(--border); cursor: pointer; transition: 0.2s;}
+.player-item:hover { background: rgba(255,255,255,0.1); }
+
+.start-game-btn { width: 90%; max-width: 400px; font-size: 1.5rem; display: none; } /* يظهر للمضيف فقط */
+
+/* شاشة اللعبة */
+.game-topbar { display: flex; justify-content: center; align-items: center; gap: 30px; margin-bottom: 50px; }
+.score-badge { display: flex; align-items: center; gap: 15px; background: var(--box-bg); padding: 8px 25px 8px 8px; border-radius: 50px; border: 1px solid var(--border); font-size: 1.3rem; font-weight: bold; }
+.score-badge.t2-badge { padding: 8px 8px 8px 25px; flex-direction: row-reverse; }
+.score-circle { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 900; font-size: 1.5rem; color: #fff; box-shadow: inset 0 -3px 5px rgba(0,0,0,0.3);}
+.t1-badge .score-circle { background: var(--t1-color); }
+.t2-badge .score-circle { background: var(--t2-color); }
+.vs-text { color: var(--text-muted); font-weight: 900; font-size: 1.5rem; }
+
+/* 💎 الخلايا السداسية (احترافية 3D) 💎 */
+.honeycomb { display: flex; flex-direction: column; align-items: center; padding-bottom: 50px; filter: drop-shadow(0 15px 20px rgba(0,0,0,0.5));}
+.hex-row { display: flex; justify-content: center; margin-bottom: -22px; }
+.hex-wrap { position: relative; width: 85px; height: 98px; margin: 0 3px; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.hex-border {
+    position: absolute; inset: 0; background: #2d3345;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); transition: 0.3s;
+}
+.hex-inner {
+    position: absolute; inset: 4px; background: #ffffff;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex; justify-content: center; align-items: center;
+    font-size: 2.2rem; font-weight: 900; color: #1c202d; transition: 0.3s;
+    box-shadow: inset 0 -8px 15px rgba(0,0,0,0.15); /* اللمسة الـ 3D */
+}
+.hex-wrap:hover { transform: scale(1.1); z-index: 10; }
+
+/* ألوان الفوز للفرق */
+.hex-wrap.won-t1 .hex-border { background: #fff; box-shadow: 0 0 20px rgba(217, 108, 58, 0.5);}
+.hex-wrap.won-t1 .hex-inner { background: linear-gradient(to bottom, #ff9b61, var(--t1-color)); color: #fff; text-shadow: 1px 1px 3px rgba(0,0,0,0.4);}
+.hex-wrap.won-t2 .hex-border { background: #fff; box-shadow: 0 0 20px rgba(74, 158, 154, 0.5);}
+.hex-wrap.won-t2 .hex-inner { background: linear-gradient(to bottom, #69ded9, var(--t2-color)); color: #fff; text-shadow: 1px 1px 3px rgba(0,0,0,0.4);}
+
+/* الإشعارات */
+.notification { position: fixed; top: 20px; background: #4CAF50; color: white; padding: 15px 30px; border-radius: 10px; font-weight: bold; display: none; z-index: 2000; }
