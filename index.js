@@ -1,112 +1,300 @@
-require('dotenv').config();
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
-const { Player } = require('discord-player');
-const { DefaultExtractors } = require('@discord-player/extractor');
-const express = require('express');
-
-// 1. إعداد سيرفر الويب عشان Render ما يقفل البوت
-const app = express();
-app.get('/', (req, res) => res.send('🎵 Music Bot is Online and Running!'));
-app.listen(process.env.PORT || 3000, () => console.log('✅ Web server is ready for Render.'));
-
-// 2. إعداد البوت بصلاحيات الدخول للرومات الصوتية وقراءة الرسائل
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
-    ]
-});
-
-// 3. إعداد نظام الموسيقى الاحترافي
-const player = new Player(client);
-player.extractors.loadMulti(DefaultExtractors);
-
-client.on('ready', () => {
-    console.log(`✅ Logged in as ${client.user.tag}`);
-});
-
-// 4. الأوامر النصية (تثبيت اللوحة + تشغيل أغنية)
-client.on('messageCreate', async message => {
-    if (message.author.bot || !message.guild) return;
-
-    // أمر إرسال لوحة التحكم الفخمة
-    if (message.content === '!setup') {
-        const embed = new EmbedBuilder()
-            .setTitle('🎵 واجهة التحكم بالموسيقى')
-            .setDescription('استخدم الأزرار بالأسفل للتحكم بالصوتيات.\n\nلتشغيل مقطع جديد اكتب:\n`!play <اسم الأغنية أو الرابط>`')
-            .setColor('#2F3136')
-            .setImage('https://i.imgur.com/8QWv1x9.gif'); // تقدر تغير الرابط بصورة بانر لسيرفرك
-
-        const row1 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('pause_resume').setEmoji('⏯️').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('skip').setEmoji('⏭️').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('stop').setEmoji('⏹️').setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('loop').setEmoji('🔁').setStyle(ButtonStyle.Success)
-        );
-
-        await message.channel.send({ embeds: [embed], components: [row1] });
-    }
-
-    // أمر تشغيل الموسيقى
-    if (message.content.startsWith('!play ')) {
-        const query = message.content.replace('!play ', '');
-        const channel = message.member.voice.channel;
-
-        if (!channel) return message.reply('❌ لازم تدخل روم صوتي أول!');
-
-        await message.reply(`🔍 جاري البحث عن: **${query}**...`);
-
-        try {
-            const { track } = await player.play(channel, query, {
-                nodeOptions: {
-                    metadata: message // حفظ بيانات الرسالة للتحديثات
-                }
-            });
-            message.channel.send(`🎶 تم التشغيل: **${track.title}**`);
-        } catch (e) {
-            console.log(e);
-            message.channel.send('❌ صار خطأ أو ما لقيت المقطع.');
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خلية الحروف - التحدي الأكبر</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f0c29;
+            --bg-gradient: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            --primary: #f8c942;
+            --red-team: #ff2a5f;
+            --blue-team: #00e5ff;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
-    }
-});
 
-// 5. نظام التفاعل مع الأزرار
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isButton()) return;
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-gradient);
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
 
-    const queue = player.nodes.get(interaction.guildId);
-    if (!queue || !queue.isPlaying()) {
-        return interaction.reply({ content: '❌ ما فيه شيء شغال حالياً!', ephemeral: true });
-    }
+        header {
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 0 0 15px var(--primary);
+        }
 
-    // التحقق من أن العضو في نفس الروم الصوتي للبوت
-    if (interaction.member.voice.channelId !== interaction.guild.members.me.voice.channelId) {
-        return interaction.reply({ content: '❌ لازم تكون معي في نفس الروم الصوتي!', ephemeral: true });
-    }
+        h1 { margin: 0; font-size: 3rem; color: var(--primary); }
 
-    switch (interaction.customId) {
-        case 'pause_resume':
-            queue.node.setPaused(!queue.node.isPaused());
-            await interaction.reply({ content: queue.node.isPaused() ? '⏸️ تم الإيقاف المؤقت' : '▶️ تم استكمال التشغيل', ephemeral: true });
-            break;
-        case 'skip':
-            queue.node.skip();
-            await interaction.reply({ content: '⏭️ تم تخطي المقطع!', ephemeral: true });
-            break;
-        case 'stop':
-            queue.delete();
-            await interaction.reply({ content: '⏹️ تم إيقاف الموسيقى ومسح الطابور.', ephemeral: true });
-            break;
-        case 'loop':
-            const currentMode = queue.repeatMode;
-            // تبديل بين تكرار المقطع (1) وإيقاف التكرار (0)
-            queue.setRepeatMode(currentMode === 0 ? 1 : 0);
-            await interaction.reply({ content: currentMode === 0 ? '🔁 تم تفعيل تكرار المقطع' : '▶️ تم إيقاف التكرار', ephemeral: true });
-            break;
-    }
-});
+        .scoreboard {
+            display: flex;
+            gap: 50px;
+            margin-bottom: 30px;
+            background: var(--glass-bg);
+            padding: 15px 40px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
 
-// تشغيل البوت عبر التوكن (من متغيرات البيئة في Render)
-client.login(process.env.TOKEN);
+        .score-box { text-align: center; font-size: 1.5rem; font-weight: bold; }
+        .score-red { color: var(--red-team); text-shadow: 0 0 10px var(--red-team); }
+        .score-blue { color: var(--blue-team); text-shadow: 0 0 10px var(--blue-team); }
+
+        /* Hexagon Grid System */
+        .hex-grid {
+            display: flex;
+            flex-wrap: wrap;
+            width: 80%;
+            max-width: 800px;
+            margin: 0 auto;
+            justify-content: center;
+            padding-bottom: 50px;
+        }
+
+        .hex {
+            width: 100px;
+            height: 110px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 5px;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 0 15px rgba(255,255,255,0.2);
+        }
+
+        .hex:hover {
+            background: var(--primary);
+            color: #000;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        .hex.team-red {
+            background: var(--red-team);
+            box-shadow: 0 0 20px var(--red-team);
+            color: white;
+            pointer-events: none;
+        }
+
+        .hex.team-blue {
+            background: var(--blue-team);
+            box-shadow: 0 0 20px var(--blue-team);
+            color: black;
+            pointer-events: none;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px var(--primary);
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .question-text { font-size: 1.5rem; margin: 20px 0; min-height: 80px; }
+        .answer-text { font-size: 1.2rem; color: #a8ff78; display: none; margin-bottom: 20px; font-weight: bold; }
+
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-easy { background: #4CAF50; color: white; }
+        .btn-med { background: #FF9800; color: white; }
+        .btn-show { background: #9c27b0; color: white; width: 100%; margin-top: 15px; }
+        
+        .action-btns { display: none; margin-top: 20px; justify-content: space-between; gap: 10px; }
+        .btn-red { background: var(--red-team); color: white; flex: 1; }
+        .btn-blue { background: var(--blue-team); color: black; flex: 1; }
+        .btn-close { background: #555; color: white; margin-top: 15px; width: 100%; }
+
+        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>خـلـيـة الـحـروف</h1>
+    </header>
+
+    <div class="scoreboard">
+        <div class="score-box score-red">الفريق الأحمر: <span id="scoreRed">0</span></div>
+        <div class="score-box score-blue">الفريق الأزرق: <span id="scoreBlue">0</span></div>
+    </div>
+
+    <div class="hex-grid" id="gameGrid">
+        </div>
+
+    <div class="modal" id="qModal">
+        <div class="modal-content">
+            <h2 id="modalLetter" style="color: var(--primary); font-size: 3rem; margin: 0;">أ</h2>
+            
+            <div id="difficultySelection">
+                <p>اختر مستوى السؤال:</p>
+                <button class="btn btn-easy" onclick="loadQuestion('easy')">سهل</button>
+                <button class="btn btn-med" onclick="loadQuestion('medium')">متوسط</button>
+            </div>
+
+            <div id="questionArea" style="display: none;">
+                <div class="question-text" id="qText">السؤال سيظهر هنا...</div>
+                <button class="btn btn-show" id="showAnswerBtn" onclick="showAnswer()">إظهار الإجابة</button>
+                <div class="answer-text" id="aText">الإجابة هنا...</div>
+                
+                <div class="action-btns" id="actionBtns">
+                    <button class="btn btn-red" onclick="assignPoint('red')">نقطة للأحمر</button>
+                    <button class="btn btn-blue" onclick="assignPoint('blue')">نقطة للأزرق</button>
+                </div>
+            </div>
+            
+            <button class="btn btn-close" onclick="closeModal()">إلغاء / إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        // قواعد البيانات الخاصة بالأسئلة (مجهزة لتضيف المئات بسهولة)
+        const questionsDB = {
+            'أ': {
+                easy: [{ q: "حيوان مفترس يلقب بملك الغابة؟", a: "أسد" }, { q: "لون من الألوان الأساسية، لون السماء؟", a: "أزرق" }],
+                medium: [{ q: "أطول أنهار العالم، يمر في مصر؟", a: "أمازون (أو النيل، لكن الإجابة المطلوبة تبدأ بـ أ: أمازون)" }, { q: "دولة أوروبية عاصمتها مدريد؟", a: "إسبانيا" }]
+            },
+            'ب': {
+                easy: [{ q: "فاكهة حمضية لونها برتقالي؟", a: "برتقال" }, { q: "حيوان بطيء يحمل بيته على ظهره؟", a: "بطريق (لا، حلزون! الإجابة بحرف الباء: بطريق يسبح)" }],
+                medium: [{ q: "عاصمة فرنسا؟", a: "باريس" }, { q: "بحر يفصل بين قارتي أفريقيا وأوروبا؟", a: "بحر أبيض متوسط" }]
+            },
+            'ط': {
+                easy: [{ q: "طائر يضرب به المثل في الجمال والكبرياء؟", a: "طاووس" }],
+                medium: [{ q: "عاصمة اليابان؟", a: "طوكيو" }]
+            },
+            'م': {
+                easy: [{ q: "فاكهة صفراء يحبها القرد؟", a: "موز" }],
+                medium: [{ q: "كوكب يلقب بالكوكب الأحمر؟", a: "مريخ" }]
+            },
+            'س': {
+                easy: [{ q: "أداة تستخدم لمعرفة الوقت؟", a: "ساعة" }],
+                medium: [{ q: "حيوان بحري بطيء الحركة له قوقعة؟", a: "سلحفاة" }]
+            }
+        };
+
+        // باقي الحروف (بدون أسئلة حالياً لتكملها بنفسك)
+        const allLetters = ['أ','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','هـ','و','ي'];
+
+        let scores = { red: 0, blue: 0 };
+        let currentActiveLetter = '';
+        let currentActiveCell = null;
+
+        // بناء الشبكة
+        const grid = document.getElementById('gameGrid');
+        allLetters.forEach(letter => {
+            const hex = document.createElement('div');
+            hex.className = 'hex';
+            hex.textContent = letter;
+            hex.onclick = () => openModal(letter, hex);
+            grid.appendChild(hex);
+        });
+
+        const modal = document.getElementById('qModal');
+        const qArea = document.getElementById('questionArea');
+        const diffSelect = document.getElementById('difficultySelection');
+        
+        function openModal(letter, cellElement) {
+            currentActiveLetter = letter;
+            currentActiveCell = cellElement;
+            document.getElementById('modalLetter').textContent = letter;
+            
+            // إعادة تعيين الواجهة
+            diffSelect.style.display = 'block';
+            qArea.style.display = 'none';
+            document.getElementById('aText').style.display = 'none';
+            document.getElementById('actionBtns').style.display = 'none';
+            document.getElementById('showAnswerBtn').style.display = 'block';
+            
+            modal.style.display = 'flex';
+        }
+
+        function loadQuestion(difficulty) {
+            diffSelect.style.display = 'none';
+            qArea.style.display = 'block';
+            
+            const qData = questionsDB[currentActiveLetter];
+            if (qData && qData[difficulty] && qData[difficulty].length > 0) {
+                // اختيار سؤال عشوائي من المستوى المختار
+                const randomQ = qData[difficulty][Math.floor(Math.random() * qData[difficulty].length)];
+                document.getElementById('qText').textContent = randomQ.q;
+                document.getElementById('aText').textContent = "الإجابة: " + randomQ.a;
+            } else {
+                document.getElementById('qText').textContent = "لا توجد أسئلة مضافة لهذا الحرف بهذا المستوى بعد!";
+                document.getElementById('aText').textContent = "يرجى إضافة الأسئلة في الكود.";
+            }
+        }
+
+        function showAnswer() {
+            document.getElementById('showAnswerBtn').style.display = 'none';
+            document.getElementById('aText').style.display = 'block';
+            document.getElementById('actionBtns').style.display = 'flex';
+        }
+
+        function assignPoint(team) {
+            if (team === 'red') {
+                currentActiveCell.classList.add('team-red');
+                scores.red++;
+                document.getElementById('scoreRed').textContent = scores.red;
+            } else {
+                currentActiveCell.classList.add('team-blue');
+                scores.blue++;
+                document.getElementById('scoreBlue').textContent = scores.blue;
+            }
+            closeModal();
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
