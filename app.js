@@ -19,7 +19,9 @@ let myName = "";
 let currentRoom = "";
 let isHost = false;
 
-// دالة التبديل بين الشاشات
+// فئات اللعبة (قوانين إنسان، حيوان، جماد)
+const categories = ['اسم إنسان (ذكر أو أنثى)', 'اسم حيوان', 'اسم نبات أو فاكهة', 'اسم جماد', 'اسم دولة أو مدينة', 'اسم أكلة', 'اسم مهنة أو وظيفة'];
+
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
@@ -35,11 +37,10 @@ function showNotif(msg, isError = false) {
 
 // 1. إنشاء الغرفة
 document.getElementById('btnCreateRoom').onclick = async () => {
-    myName = document.getElementById('playerName').value.trim() || 'المضيف mo';
+    myName = document.getElementById('playerName').value.trim() || 'المضيف';
     currentRoom = Math.random().toString(36).substring(2, 8).toUpperCase();
     isHost = true;
 
-    // تهيئة اللوحة فارغة
     const allLetters = ['أ','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','هـ','و','ي'];
     let initialBoard = {};
     allLetters.forEach(l => initialBoard[l] = "empty");
@@ -47,19 +48,19 @@ document.getElementById('btnCreateRoom').onclick = async () => {
     try {
         await set(ref(db, 'rooms/' + currentRoom), {
             host: myName,
-            status: 'lobby', // حالة الغرفة (لوبي أو لعب)
+            status: 'lobby',
             scores: { t1: 0, t2: 0 },
             board: initialBoard,
             players: {
-                [myName]: { team: 'wait' } // يبدأ في الانتظار
+                [myName]: { team: 'wait' }
             }
         });
         
         document.getElementById('displayCode').textContent = currentRoom;
-        document.getElementById('btnStartGame').style.display = 'block'; // يظهر للمضيف فقط
+        document.getElementById('btnStartGame').style.display = 'block';
         showScreen('lobbyScreen');
         listenToRoom();
-        showNotif("تم إنشاء الغرفة!");
+        showNotif("تم إنشاء الغرفة بنجاح!");
     } catch (err) {
         showNotif("يوجد مشكلة في فايربيس", true);
     }
@@ -84,29 +85,26 @@ document.getElementById('btnJoinRoom').onclick = async () => {
             listenToRoom();
             showNotif("تم الانضمام للغرفة!");
         } else {
-            showNotif("كود الغرفة خاطئ", true);
+            showNotif("كود الغرفة غير صحيح", true);
         }
     } catch (err) {
         showNotif("خطأ في الاتصال", true);
     }
 };
 
-// 3. المزامنة الحية للغرفة (اللاعبين + اللعبة)
+// 3. المزامنة الحية للغرفة
 function listenToRoom() {
     onValue(ref(db, 'rooms/' + currentRoom), (snapshot) => {
         const data = snapshot.val();
         if(!data) return;
 
-        // تحديث حالة اللاعبين في اللوبي
         updateLobbyUI(data.players, data.host);
 
-        // إذا ضغط المضيف "بدأ اللعبة"
         if (data.status === 'playing') {
             if (!document.getElementById('gameScreen').classList.contains('active')) {
                 buildBoardUI();
                 showScreen('gameScreen');
             }
-            // تحديث النقاط واللوحة
             document.getElementById('scoreT1').textContent = data.scores.t1;
             document.getElementById('scoreT2').textContent = data.scores.t2;
             updateBoardUI(data.board);
@@ -129,7 +127,6 @@ function updateLobbyUI(players, hostName) {
         div.className = 'player-item';
         div.textContent = pName + tag;
 
-        // المضيف يقدر يضغط على اسم اللاعب عشان ينقله بين الفرق
         if (isHost) {
             div.onclick = () => {
                 let nextTeam = p.team === 'wait' ? 't1' : p.team === 't1' ? 't2' : 'wait';
@@ -146,18 +143,17 @@ function updateLobbyUI(players, hostName) {
     document.getElementById('t2Count').textContent = c2;
 }
 
-// 4. بدء اللعبة (للمضيف فقط)
 document.getElementById('btnStartGame').onclick = () => {
     update(ref(db, `rooms/${currentRoom}`), { status: 'playing' });
 };
 
-// 5. بناء وتحديث خلية الحروف السداسية
+// 4. بناء الخلية وتطبيق قوانين (إنسان، حيوان، جماد)
 const rowLayout = [6, 5, 6, 5, 6];
 const allLetters = ['أ','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','هـ','و','ي'];
 
 function buildBoardUI() {
     const board = document.getElementById('board');
-    if (board.innerHTML !== '') return; // مبنية مسبقاً
+    if (board.innerHTML !== '') return;
     
     let letterIdx = 0;
     rowLayout.forEach(count => {
@@ -171,7 +167,6 @@ function buildBoardUI() {
                 wrap.id = 'hex-' + l;
                 wrap.innerHTML = `<div class="hex-border"></div><div class="hex-inner">${l}</div>`;
                 
-                // المضيف فقط هو اللي يضغط على الخلايا عشان يلونها حالياً (مبدئياً لضمان عدم الفوضى)
                 if (isHost) {
                     wrap.onclick = () => handleCellClick(l);
                 }
@@ -188,27 +183,46 @@ function updateBoardUI(boardData) {
     allLetters.forEach(l => {
         let cell = document.getElementById('hex-' + l);
         if(cell) {
-            cell.className = 'hex-wrap'; // تصفير الكلاسات
+            cell.className = 'hex-wrap';
             if(boardData[l] === 't1') cell.classList.add('won-t1');
             if(boardData[l] === 't2') cell.classList.add('won-t2');
         }
     });
 }
 
-// دالة تغيير لون الخلية (عند الضغط من المضيف)
+// 5. دالة الضغط على الخلية (توليد التحدي العشوائي حسب القوانين الجديدة)
 async function handleCellClick(letter) {
     const snap = await get(ref(db, `rooms/${currentRoom}/board/${letter}`));
     let state = snap.val();
-    let newState = state === "empty" ? "t1" : state === "t1" ? "t2" : "empty";
     
-    update(ref(db, `rooms/${currentRoom}/board`), { [letter]: newState });
+    // إذا الخلية غير ملونة، يظهر التحدي للمضيف ليطرحه على الفرق
+    if(state === "empty") {
+        let randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        let challengeMsg = `التحدي: هات [ ${randomCategory} ] يبدأ بحرف الـ ( ${letter} )`;
+        
+        // إظهار نافذة صغيرة للمضيف لتحديد الفائز
+        let answer = prompt(`${challengeMsg}\n\nإذا جاوب الفريق الأول بشكل صحيح اكتب رقم 1\nإذا جاوب الفريق الثاني اكتب رقم 2\nللإلغاء اتركها فارغة.`);
+        
+        if(answer === '1') {
+            update(ref(db, `rooms/${currentRoom}/board`), { [letter]: 't1' });
+        } else if(answer === '2') {
+            update(ref(db, `rooms/${currentRoom}/board`), { [letter]: 't2' });
+        }
+    } 
+    // إذا كانت ملونة مسبقاً، المضيف يقدر يلغيها أو ينقلها للفريق الآخر
+    else {
+        let newState = state === "t1" ? "t2" : "empty";
+        update(ref(db, `rooms/${currentRoom}/board`), { [letter]: newState });
+    }
     
-    // تحديث النقاط تلقائياً بناءً على عدد المربعات
-    const boardSnap = await get(ref(db, `rooms/${currentRoom}/board`));
-    let t1Score = 0, t2Score = 0;
-    Object.values(boardSnap.val()).forEach(val => {
-        if (val === 't1') t1Score++;
-        if (val === 't2') t2Score++;
-    });
-    update(ref(db, `rooms/${currentRoom}/scores`), { t1: t1Score, t2: t2Score });
+    // تحديث النقاط للجميع تلقائياً
+    setTimeout(async () => {
+        const boardSnap = await get(ref(db, `rooms/${currentRoom}/board`));
+        let t1Score = 0, t2Score = 0;
+        Object.values(boardSnap.val()).forEach(val => {
+            if (val === 't1') t1Score++;
+            if (val === 't2') t2Score++;
+        });
+        update(ref(db, `rooms/${currentRoom}/scores`), { t1: t1Score, t2: t2Score });
+    }, 500);
 }
