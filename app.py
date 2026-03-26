@@ -14,6 +14,9 @@ from youtubesearchpython import VideosSearch
 from discord import VoiceClient, Member, VoiceState
 from typing import TYPE_CHECKING, Union, Optional
 
+# استدعاء السيرفر الوهمي اللي سويناه
+from keep_alive import keep_alive 
+
 if TYPE_CHECKING:
     from discord.ext.commands import Bot
 
@@ -218,9 +221,12 @@ async def on_setup():
 
 bot.setup_hook = on_setup
 
-# سحب التوكن من متغيرات البيئة للأمان
+# تشغيل السيرفر الوهمي عشان ما يطفي البوت في Render
+keep_alive()
+
+# سحب التوكن من متغيرات البيئة
 TOKEN = os.getenv('MTA3ODA3MTgzNTc0NjM2OTU1Ng.GhrMcz.MFlm74-hdlOwIOYt1CD0bKoqhR8Zv6ihDQkIdc')
 if TOKEN:
     bot.run(TOKEN)
 else:
-    print("Error: DISCORD_TOKEN is missing. Please add it to your environment variables.")
+    print("Error: DISCORD_TOKEN is missing. Please add it to your environment variables in Render.")
